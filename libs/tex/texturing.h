@@ -57,7 +57,7 @@ generate_texture_views(std::string const & in_scene,
   */
 void
 build_adjacency_graph(mve::TriangleMesh::ConstPtr mesh,
-    mve::MeshInfo const & mesh_info, UniGraph * graph);
+                      mve::MeshInfo const & mesh_info, UniGraph * graph);
 
 /**
  * Calculates the data costs for each face and texture view combination,
@@ -65,8 +65,9 @@ build_adjacency_graph(mve::TriangleMesh::ConstPtr mesh,
  */
 void
 calculate_data_costs(mve::TriangleMesh::ConstPtr mesh,
-    TextureViews * texture_views, Settings const & settings,
-    DataCosts * data_costs);
+                     TextureViews * texture_views, Settings const & settings,
+                     DataCosts * data_costs,
+                     tex::FaceProjectionInfos & face_projection_infos);
 
 void
 postprocess_face_infos(Settings const & settings,
@@ -116,6 +117,12 @@ generate_texture_atlases(TexturePatches * texture_patches,
 void
 build_model(mve::TriangleMesh::ConstPtr mesh,
     TextureAtlases const & texture_atlas, Model * model);
+
+// Calculate the cost for each view and each face
+void
+calculate_face_projection_infos(mve::TriangleMesh::ConstPtr mesh,
+                                std::vector<TextureView> * texture_views, Settings const & settings,
+                                FaceProjectionInfos * face_projection_infos);
 
 TEX_NAMESPACE_END
 

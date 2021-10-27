@@ -130,8 +130,8 @@ photometric_outlier_detection(std::vector<FaceProjectionInfo> * infos, Settings 
 
 void
 calculate_face_projection_infos(mve::TriangleMesh::ConstPtr mesh,
-    std::vector<TextureView> * texture_views, Settings const & settings,
-    FaceProjectionInfos * face_projection_infos) {
+                                std::vector<TextureView> * texture_views, Settings const & settings,
+                                tex::FaceProjectionInfos * face_projection_infos) {
 
     std::vector<unsigned int> const & faces = mesh->get_faces();
     std::vector<math::Vec3f> const & vertices = mesh->get_vertices();
@@ -219,6 +219,13 @@ calculate_face_projection_infos(mve::TriangleMesh::ConstPtr mesh,
                 /* Calculate quality. */
                 texture_view->get_face_info(v1, v2, v3, &info, settings);
 
+                if (settings.data_term == DATA_TERM_VIEW_DIR_DOT_FACE_DIR) {
+                  // Note how override the quality metric for this
+                  // case. Cannot compute it in get_face_info as there
+                  // we don't know the inputs we need.
+                  info.quality = std::max(viewing_direction.dot(view_to_face_vec), 0.0f);
+                }
+                
                 if (info.quality == 0.0) continue;
 
                 /* Change color space. */
@@ -274,7 +281,7 @@ postprocess_face_infos(Settings const & settings,
         face_counter.inc();
     }
 
-    /* Determine the function for the normlization. */
+    /* Determine the function for the normalization. */
     float max_quality = 0.0f;
     for (std::size_t i = 0; i < face_projection_infos->size(); ++i)
         for (FaceProjectionInfo const & info : face_projection_infos->at(i))
@@ -297,8 +304,10 @@ postprocess_face_infos(Settings const & settings,
             data_costs->set_value(i, info.view_id, data_cost);
         }
 
-        /* Ensure that all memory is freeed. */
-        face_projection_infos->at(i) = std::vector<FaceProjectionInfo>();
+        // This is no longer needed except for the DATA_TERM_VIEW_DIR_DOT_FACE_DIR case.
+        if (settings.data_term != DATA_TERM_VIEW_DIR_DOT_FACE_DIR) {
+          face_projection_infos->at(i) = std::vector<FaceProjectionInfo>();
+        }
     }
 
     std::cout << "\tMaximum quality of a face within an image: " << max_quality << std::endl;
@@ -307,17 +316,19 @@ postprocess_face_infos(Settings const & settings,
 
 void
 calculate_data_costs(mve::TriangleMesh::ConstPtr mesh, std::vector<TextureView> * texture_views,
-    Settings const & settings, DataCosts * data_costs) {
+                     Settings const & settings, DataCosts * data_costs,
+                     FaceProjectionInfos & face_projection_infos) {
 
     std::size_t const num_faces = mesh->get_faces().size() / 3;
     std::size_t const num_views = texture_views->size();
 
+    face_projection_infos.resize(num_faces);
+    
     if (num_faces > std::numeric_limits<std::uint32_t>::max())
         throw std::runtime_error("Exeeded maximal number of faces");
     if (num_views > std::numeric_limits<std::uint16_t>::max())
         throw std::runtime_error("Exeeded maximal number of views");
 
-    FaceProjectionInfos face_projection_infos(num_faces);
     calculate_face_projection_infos(mesh, texture_views, settings, &face_projection_infos);
     postprocess_face_infos(settings, &face_projection_infos, data_costs);
 }

@@ -90,19 +90,49 @@ int main(int argc, char **argv) {
     tex::Graph graph(num_faces);
     tex::build_adjacency_graph(mesh, mesh_info, &graph);
 
-    if (conf.labeling_file.empty()) {
+    tex::FaceProjectionInfos face_projection_infos(num_faces);
+
+    if (conf.settings.data_term == tex::DATA_TERM_VIEW_DIR_DOT_FACE_DIR) {
+
+      // We declare the best view to be the one which is most "upfront"
+      // with the face center. No optimization happens.
+      std::size_t const num_views = texture_views.size();
+      if (num_faces > std::numeric_limits<std::uint32_t>::max())
+        throw std::runtime_error("Exeeded maximal number of faces");
+      if (num_views > std::numeric_limits<std::uint16_t>::max())
+        throw std::runtime_error("Exeeded maximal number of views");
+      tex::calculate_face_projection_infos(mesh, &texture_views, conf.settings,
+                                           &face_projection_infos);
+
+      for (size_t face_it = 0; face_it < num_faces; face_it++) {
+        std::vector<tex::FaceProjectionInfo> & infos = face_projection_infos.at(face_it);
+        double max_val = 0.0;
+        int best_index = -1;
+        for (size_t image_it = 0; image_it < infos.size(); image_it++) {
+          if (infos[image_it].quality > max_val) {
+            max_val = infos[image_it].quality;
+            best_index = infos[image_it].view_id;
+          }
+        }
+        
+        if (best_index >= 0) 
+          graph.set_label(face_it, best_index + 1);
+      }
+      
+    } else if (conf.labeling_file.empty()) {
         std::cout << "View selection:" << std::endl;
         util::WallTimer rwtimer;
 
         tex::DataCosts data_costs(num_faces, texture_views.size());
         if (conf.data_cost_file.empty()) {
-            tex::calculate_data_costs(mesh, &texture_views, conf.settings, &data_costs);
+          tex::calculate_data_costs(mesh, &texture_views, conf.settings, &data_costs,
+                                    face_projection_infos);
 
-            if (conf.write_intermediate_results) {
-                std::cout << "\tWriting data cost file... " << std::flush;
-                tex::DataCosts::save_to_file(data_costs, conf.out_prefix + "_data_costs.spt");
-                std::cout << "done." << std::endl;
-            }
+          if (conf.write_intermediate_results) {
+            std::cout << "\tWriting data cost file... " << std::flush;
+            tex::DataCosts::save_to_file(data_costs, conf.out_prefix + "_data_costs.spt");
+            std::cout << "done." << std::endl;
+          }
         } else {
             std::cout << "\tLoading data cost file... " << std::flush;
             try {
@@ -116,11 +146,12 @@ int main(int argc, char **argv) {
         }
         timer.measure("Calculating data costs");
 
+        // Decide which view (image) to use for which mesh face
         try {
-            tex::view_selection(data_costs, &graph, conf.settings);
+          tex::view_selection(data_costs, &graph, conf.settings);
         } catch (std::runtime_error& e) {
-            std::cerr << "\tOptimization failed: " << e.what() << std::endl;
-            std::exit(EXIT_FAILURE);
+          std::cerr << "\tOptimization failed: " << e.what() << std::endl;
+          std::exit(EXIT_FAILURE);
         }
         timer.measure("Running MRF optimization");
         std::cout << "\tTook: " << rwtimer.get_elapsed_sec() << "s" << std::endl;

@@ -243,10 +243,18 @@ TextureView::get_face_info(math::Vec3f const & v1, math::Vec3f const & v2,
             face_info->mean_color = ((c1 + c2 + c3) / 3.0);
         }
     }
-
+    
     switch (settings.data_term) {
-        case DATA_TERM_AREA: face_info->quality = area; break;
-        case DATA_TERM_GMI:  face_info->quality = gmi; break;
+    case DATA_TERM_AREA:
+      face_info->quality = area;
+      break;
+    case DATA_TERM_GMI:
+      face_info->quality = gmi;
+      break;
+    case DATA_TERM_VIEW_DIR_DOT_FACE_DIR:
+      face_info->quality = 0;
+      // Will be computed later
+      break;
     }
 }
 
