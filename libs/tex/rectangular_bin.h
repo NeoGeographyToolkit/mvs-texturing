@@ -27,24 +27,24 @@ class RectangularBin {
         typedef std::shared_ptr<RectangularBin> Ptr;
 
     private:
-        unsigned int width;
-        unsigned int height;
-        std::list<Rect<int> > rects;
+        long width;
+        long height;
+        std::list<Rect<long> > rects;
 
     public:
         /**
           * Initializes the rectangular binpacking algorithm to fill a rectangle of the given size.
           */
-        RectangularBin(unsigned int width, unsigned int height);
+        RectangularBin(long width, long height);
 
-        static RectangularBin::Ptr create(unsigned int width, unsigned int height);
+        static RectangularBin::Ptr create(long width, long height);
 
         /** Returns true and changes the position of the given rect if it fits into the bin. */
-        bool insert(Rect<int> * rect);
+        bool insert(Rect<long> * rect);
 };
 
 inline RectangularBin::Ptr
-RectangularBin::create(unsigned int width, unsigned int height)
+RectangularBin::create(long width, long height)
 {
     return Ptr(new RectangularBin(width, height));
 }
