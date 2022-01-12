@@ -44,7 +44,7 @@ dependencies (so there is nothing you need to do here):
 Compilation ![Build Status](https://travis-ci.org/nmoehrle/mvs-texturing.svg)
 --------------------------------------------------------------------------------
 
-1.  `git clone https://github.com/nmoehrle/mvs-texturing.git`
+1.  `git clone https://github.com/oleg-alexandrov/mvs-texturing.git` (the original repo is at `https://github.com/nmoehrle/mvs-texturing.git`)
 2.  `cd mvs-texturing`
 3.  `mkdir build && cd build && cmake ..`
 4.  `make` (or `make -j` for parallel compilation)
