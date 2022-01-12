@@ -62,9 +62,9 @@ TextureAtlas::insert(TexturePatch::ConstPtr texture_patch) {
     assert(bin != NULL);
     assert(validity_mask != NULL);
 
-    int const width = texture_patch->get_width() + 2 * padding;
-    int const height = texture_patch->get_height() + 2 * padding;
-    Rect<int> rect(0, 0, width, height);
+    long const width = texture_patch->get_width() + 2 * padding;
+    long const height = texture_patch->get_height() + 2 * padding;
+    Rect<long> rect(0, 0, width, height);
     if (!bin->insert(&rect)) return false;
 
     /* Update texture atlas and its validity mask. */
