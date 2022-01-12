@@ -47,15 +47,15 @@ bool RectangularBin::insert(Rect<long> * rect) {
         Rect<long> vsplit_left(best_rect.min_x, rect->max_y, rect->max_x, best_rect.max_y);
         Rect<long> vsplit_right(rect->max_x, best_rect.min_y, best_rect.max_x, best_rect.max_y);
 
-        double hsplit_ratio = 1.0f;
-        double vsplit_ratio = 1.0f;
+        double hsplit_ratio = 1.0;
+        double vsplit_ratio = 1.0;
 
         if (hsplit_top.size() != 0 && hsplit_bottom.size() != 0)
             hsplit_ratio = static_cast<double>(hsplit_top.size()) / hsplit_bottom.size();
         if (vsplit_left.size() != 0 && vsplit_right.size() != 0)
             vsplit_ratio = static_cast<double>(vsplit_left.size()) / vsplit_right.size();
 
-        if (std::abs(1.0f - hsplit_ratio) < std::abs(1.0f - vsplit_ratio)){
+        if (std::abs(1.0 - hsplit_ratio) < std::abs(1.0 - vsplit_ratio)){
             if (vsplit_left.size() != 0) rects.push_back(vsplit_left);
             if (vsplit_right.size() != 0) rects.push_back(vsplit_right);
         } else {
