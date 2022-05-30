@@ -1,6 +1,6 @@
 externalproject_add(ext_mapmap
     PREFIX          ext_mapmap
-    GIT_REPOSITORY  https://github.com/dthuerck/mapmap_cpu.git
+    GIT_REPOSITORY  git@github.com:oleg-alexandrov/mapmap_cpu.git
     GIT_TAG         396f0fa1ce29f83de30e47c5b4fc7b2ca1e06e5d
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/mapmap
@@ -11,7 +11,7 @@ externalproject_add(ext_mapmap
 
 externalproject_add(ext_rayint
     PREFIX          ext_rayint
-    GIT_REPOSITORY  https://github.com/nmoehrle/rayint.git
+    GIT_REPOSITORY  git@github.com:oleg-alexandrov/rayint.git
     GIT_TAG         cuda
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/rayint
@@ -20,19 +20,20 @@ externalproject_add(ext_rayint
     INSTALL_COMMAND ""
 )
 
-externalproject_add(ext_eigen
-    PREFIX          ext_eigen
-    URL             https://gitlab.com/libeigen/eigen/-/archive/3.3.2/eigen-3.3.2.tar.gz
-    URL_MD5         02edfeec591ae09848223d622700a10b
-    SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/eigen
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND   ""
-    INSTALL_COMMAND ""
-)
+#externalproject_add(ext_eigen
+#    PREFIX          ext_eigen
+#    URL             https://gitlab.com/libeigen/eigen/-/archive/3.3.2/eigen-3.3.2.tar.gz
+#    URL_MD5         02edfeec591ae09848223d622700a10b
+#    SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/eigen
+#    CONFIGURE_COMMAND ""
+#    BUILD_COMMAND   ""
+#    INSTALL_COMMAND ""
+#)
 
 externalproject_add(ext_mve
     PREFIX          mve
-    GIT_REPOSITORY  https://github.com/oleg-alexandrov/mve.git
+    GIT_REPOSITORY  git@github.com:oleg-alexandrov/mve.git
+    GIT_TAG         cfde01c
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""

@@ -5,6 +5,14 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/elibs/tbb")
 project(Texturing)
 include(ExternalProject)
 
+#if("${RIG_CALIBRATOR_DEPS_DIR}" STREQUAL "")
+#  message(FATAL_ERROR "You need to set RIG_CALIBRATOR_DEPS_DIR pointing to a conda env having the dependencies.")
+#endif()
+
+# Where to search for dependencies
+set(CMAKE_PREFIX_PATH "${RIG_CALIBRATOR_DEPS_DIR};${CMAKE_PREFIX_PATH}")
+# set(CMAKE_MODULE_PATH "${RIG_CALIBRATOR_DEPS_DIR}/lib/cmake/Ceres;${CMAKE_MODULE_PATH}")
+
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Setting build type to 'RELWITHDEBINFO' as none was specified.")
     set(CMAKE_BUILD_TYPE RELWITHDEBINFO)
@@ -20,7 +28,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED yes)
 add_definitions(-DEIGEN_MPL2_ONLY)
 
-FIND_PACKAGE(OpenMP)
+FIND_PACKAGE(OpenMP REQUIRED)
 if(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -36,12 +44,20 @@ find_package(PNG REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(TIFF REQUIRED)
 
+# Eigen
+find_package(Eigen3 3 REQUIRED NO_MODULE)
+if (EIGEN3_FOUND)
+   message("-- Found Eigen3: ${EIGEN3_INCLUDE_DIRS}")
+else (EIGEN3_FOUND)
+   message(FATAL_ERROR "Cannot find Eigen3.")
+endif (EIGEN3_FOUND)
+
 add_subdirectory(elibs)
 include_directories(SYSTEM
     ${CMAKE_SOURCE_DIR}/elibs/rayint/libs
     ${CMAKE_SOURCE_DIR}/elibs/mve/libs
-    ${CMAKE_SOURCE_DIR}/elibs/eigen
-    ${CMAKE_SOURCE_DIR}/elibs/mapmap/
+    ${EIGEN3_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/elibs/mapmap
     ${CMAKE_SOURCE_DIR}/elibs/mapmap/mapmap
     ${CMAKE_SOURCE_DIR}/elibs/mapmap/ext/dset
 )
