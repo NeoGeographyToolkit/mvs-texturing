@@ -1,13 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/elibs/tbb")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/elibs/tbb")
 
 project(Texturing)
 include(ExternalProject)
-
-#if("${RIG_CALIBRATOR_DEPS_DIR}" STREQUAL "")
-#  message(FATAL_ERROR "You need to set RIG_CALIBRATOR_DEPS_DIR pointing to a conda env having the dependencies.")
-#endif()
 
 # Where to search for dependencies
 set(CMAKE_PREFIX_PATH "${RIG_CALIBRATOR_DEPS_DIR};${CMAKE_PREFIX_PATH}")

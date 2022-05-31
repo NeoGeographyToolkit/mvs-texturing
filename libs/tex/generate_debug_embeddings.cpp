@@ -46,7 +46,7 @@ generate_debug_colors(std::vector<math::Vec4f> & colors) {
                 float x = c * (1.0f - fabs(fmod(h / 60.0f, 2.0f) - 1.0f));
                 float m = v - c;
 
-                math::Vec4f color;
+                math::Vec4f color = math::Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
                 if (0 <= h && h < 60)
                     color = math::Vec4f(c, x, 0.0f, 1.0f);
                 if (60 <= h && h < 120)
