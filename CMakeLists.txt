@@ -5,14 +5,12 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/elibs/tbb")
 project(Texturing)
 include(ExternalProject)
 
-# Where to search for dependencies
-set(CMAKE_PREFIX_PATH "${RIG_CALIBRATOR_DEPS_DIR};${CMAKE_PREFIX_PATH}")
-# set(CMAKE_MODULE_PATH "${RIG_CALIBRATOR_DEPS_DIR}/lib/cmake/Ceres;${CMAKE_MODULE_PATH}")
-
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Setting build type to 'RELWITHDEBINFO' as none was specified.")
     set(CMAKE_BUILD_TYPE RELWITHDEBINFO)
 endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 #Search for TBB library (release build)
 set(CMAKE_BUILD_TYPE_BACKUP ${CMAKE_BUILD_TYPE})

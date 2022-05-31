@@ -1,3 +1,9 @@
+# TODO(oalexan1): Apparently rayint builds its own copy of mve, apart
+# from the one below. This needs to be sorted out.
+
+# TODO(oalexan1): Add all these as submodules rather than external projects,
+# as then one can configure all of them at the same time.
+
 externalproject_add(ext_mapmap
     PREFIX          ext_mapmap
     GIT_REPOSITORY  git@github.com:oleg-alexandrov/mapmap_cpu.git
@@ -20,6 +26,7 @@ externalproject_add(ext_rayint
     INSTALL_COMMAND ""
 )
 
+# Eigen is fetched separately.
 #externalproject_add(ext_eigen
 #    PREFIX          ext_eigen
 #    URL             https://gitlab.com/libeigen/eigen/-/archive/3.3.2/eigen-3.3.2.tar.gz
