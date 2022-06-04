@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/elibs/tbb")
+# This will be picked up by cmake from the conda env
+#LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/elibs/tbb")
 
 project(Texturing)
 include(ExternalProject)
@@ -46,24 +47,32 @@ else (EIGEN3_FOUND)
    message(FATAL_ERROR "Cannot find Eigen3.")
 endif (EIGEN3_FOUND)
 
-add_subdirectory(elibs)
+#add_subdirectory(elibs)
 include_directories(SYSTEM
-    ${CMAKE_SOURCE_DIR}/elibs/rayint/libs
-    ${CMAKE_SOURCE_DIR}/elibs/mve/libs
+#    ${CMAKE_SOURCE_DIR}/elibs/rayint/libs
+    ${CMAKE_SOURCE_DIR}/rayint/libs
+    
+#    ${CMAKE_SOURCE_DIR}/elibs/mve/libs
+    ${CMAKE_SOURCE_DIR}/mve/libs
+    
     ${EIGEN3_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/elibs/mapmap
-    ${CMAKE_SOURCE_DIR}/elibs/mapmap/mapmap
-    ${CMAKE_SOURCE_DIR}/elibs/mapmap/ext/dset
+    
+#    ${CMAKE_SOURCE_DIR}/elibs/mapmap
+#    ${CMAKE_SOURCE_DIR}/elibs/mapmap/mapmap
+#    ${CMAKE_SOURCE_DIR}/elibs/mapmap/ext/dset
+     ${CMAKE_SOURCE_DIR}/mapmap
+     ${CMAKE_SOURCE_DIR}/mapmap/mapmap
+     ${CMAKE_SOURCE_DIR}/mapmap/ext/dset
 )
 
 include_directories(
     libs
 )
 
-link_directories(
-    ${CMAKE_SOURCE_DIR}/elibs/mve/libs/mve
-    ${CMAKE_SOURCE_DIR}/elibs/mve/libs/util
-)
+# link_directories(
+#     ${CMAKE_SOURCE_DIR}/elibs/mve/libs/mve
+#     ${CMAKE_SOURCE_DIR}/elibs/mve/libs/util
+# )
 
 add_subdirectory(libs)
 add_subdirectory(apps)
