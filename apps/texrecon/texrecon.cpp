@@ -49,14 +49,19 @@ int main(int argc, char **argv) {
     }
 
     std::string const tmp_dir = util::fs::join_path(out_dir, "tmp");
-    if (!util::fs::dir_exists(tmp_dir.c_str())) {
+
+    // Remove stray tmp dir
+    if (util::fs::dir_exists(tmp_dir.c_str())) {
+      std::cout << "Removing old temporary directory: " << tmp_dir << std::endl;
+      util::fs::rmdir(tmp_dir.c_str());
+    }
+
+    if (!util::fs::dir_exists(tmp_dir.c_str()))
         util::fs::mkdir(tmp_dir.c_str());
-    } else {
-        std::cerr
-            << "Temporary directory \"tmp\" exists within the destination directory.\n"
-            << "Cannot continue since this directory would be delete in the end.\n"
-            << std::endl;
-        std::exit(EXIT_FAILURE);
+
+    if (!util::fs::dir_exists(tmp_dir.c_str())) {
+      std::cerr << "Cannot create directory: " << tmp_dir << std::endl;
+      std::exit(EXIT_FAILURE);
     }
 
     // Set the number of threads to use.
