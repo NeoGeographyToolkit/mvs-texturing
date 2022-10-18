@@ -21,8 +21,6 @@
 #include "texture_patch.h"
 #include "texture_atlas.h"
 
-#define MAX_TEXTURE_SIZE (8 * 1024)
-#define PREF_TEXTURE_SIZE (4 * 1024)
 #define MIN_TEXTURE_SIZE (256)
 
 TEX_NAMESPACE_BEGIN
@@ -33,15 +31,22 @@ TEX_NAMESPACE_BEGIN
   * of the maximal possible texture atlas size.
   */
 unsigned int
-calculate_texture_size(std::list<TexturePatch::ConstPtr> const & texture_patches) {
-    unsigned int size = MAX_TEXTURE_SIZE;
+calculate_texture_size(std::list<TexturePatch::ConstPtr> const & texture_patches,
+                       size_t max_texture_size, int padding) {
+  unsigned int size = max_texture_size;
+  unsigned int pref_texture_size = max_texture_size/2;
 
+  if (pref_texture_size < MIN_TEXTURE_SIZE) {
+    std::cout << "The value of max_texture_size must be at least " << 2*MIN_TEXTURE_SIZE
+              << std::endl;
+    exit(1);
+  }
+  
     while (true) {
         unsigned int total_area = 0;
         unsigned int max_width = 0;
         unsigned int max_height = 0;
-        unsigned int padding = size >> 7;
-
+        
         for (TexturePatch::ConstPtr texture_patch : texture_patches) {
             unsigned int width = texture_patch->get_width() + 2 * padding;
             unsigned int height = texture_patch->get_height() + 2 * padding;
@@ -62,13 +67,18 @@ calculate_texture_size(std::list<TexturePatch::ConstPtr> const & texture_patches
             total_area += area;
         }
 
-        assert(max_width < MAX_TEXTURE_SIZE);
-        assert(max_height < MAX_TEXTURE_SIZE);
-        if (size > PREF_TEXTURE_SIZE &&
-            max_width < PREF_TEXTURE_SIZE &&
-            max_height < PREF_TEXTURE_SIZE &&
-            total_area / (PREF_TEXTURE_SIZE * PREF_TEXTURE_SIZE) < 8) {
-            size = PREF_TEXTURE_SIZE;
+        if (max_width >= max_texture_size || max_height >= max_texture_size) {
+          std::cout << "Found an unreasonably large patch. "
+                    << "Consider increasing --max_texture_size to more than: "
+                    << std::max(max_width, max_height) << ".\n";
+          exit(1);
+        }
+        
+        if (size > pref_texture_size &&
+            max_width < pref_texture_size &&
+            max_height < pref_texture_size &&
+            total_area / (pref_texture_size * pref_texture_size) < 8) {
+            size = pref_texture_size;
             continue;
         }
 
@@ -122,7 +132,9 @@ generate_texture_atlases(std::vector<TexturePatch::Ptr> * orig_texture_patches,
     {
 
     while (!texture_patches.empty()) {
-        unsigned int texture_size = calculate_texture_size(texture_patches);
+      unsigned int texture_size
+        = calculate_texture_size(texture_patches, settings.max_texture_size,
+                                 settings.texture_patch_padding);
 
         texture_atlases->push_back(TextureAtlas::create(texture_size));
         TextureAtlas::Ptr texture_atlas = texture_atlases->back();

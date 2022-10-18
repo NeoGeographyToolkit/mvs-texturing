@@ -10,6 +10,8 @@
 #include "arguments.h"
 #include "util/file_system.h"
 
+#include <iostream>
+
 #define SKIP_GLOBAL_SEAM_LEVELING "skip_global_seam_leveling"
 #define SKIP_GEOMETRIC_VISIBILITY_TEST "skip_geometric_visibility_test"
 #define SKIP_LOCAL_SEAM_LEVELING "skip_local_seam_leveling"
@@ -18,6 +20,7 @@
 #define SKIP_HOLE_FILLING "skip_hole_filling"
 #define KEEP_UNSEEN_FACES "keep_unseen_faces"
 #define NUM_THREADS "num_threads"
+#define MAX_TEXTURE_SIZE "max_texture_size"
 
 Arguments parse_args(int argc, char **argv) {
     util::Arguments args;
@@ -89,6 +92,8 @@ Arguments parse_args(int argc, char **argv) {
         "Do not write out intermediate results");
     args.add_option('\0', NUM_THREADS, true,
         "How many threads to use. Set 1 for determinism.");
+    args.add_option('\0', MAX_TEXTURE_SIZE, true,
+        "The maximum size (width and height) of each produced texture file. The default is 8192.");
     args.parse(argc, argv);
 
     Arguments conf;
@@ -105,6 +110,7 @@ Arguments parse_args(int argc, char **argv) {
     conf.write_view_selection_model = false;
 
     conf.num_threads = -1;
+    conf.settings.max_texture_size = 8 * 1024;
 
     /* Handle optional arguments. */
     for (util::ArgResult const* i = args.next_option();
@@ -148,6 +154,8 @@ Arguments parse_args(int argc, char **argv) {
                 conf.write_intermediate_results = false;
             } else if (i->opt->lopt == NUM_THREADS) {
                 conf.num_threads = std::stoi(i->arg);
+            } else if (i->opt->lopt == MAX_TEXTURE_SIZE) {
+              conf.settings.max_texture_size = std::stoi(i->arg);
             } else {
                 throw std::invalid_argument("Invalid long option");
             }

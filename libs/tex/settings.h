@@ -95,6 +95,8 @@ struct Settings {
     bool local_seam_leveling = true;
     bool hole_filling = true;
     bool keep_unseen_faces = false;
+    int  max_texture_size = 0;
+    int texture_patch_padding = 32;
 };
 
 TEX_NAMESPACE_END
