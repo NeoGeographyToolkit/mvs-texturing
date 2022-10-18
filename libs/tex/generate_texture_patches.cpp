@@ -71,7 +71,7 @@ struct TexturePatchCandidate {
     TexturePatch::Ptr texture_patch;
 };
 
-// A structure to store the bounding box of a mesh face in units of pixel of a given image
+// A structure to store the bounding box of a mesh face after being projected in a camera image.
 struct FaceBox {
   int min_x, min_y, max_x, max_y;
   FaceBox() {
@@ -91,6 +91,9 @@ generate_candidates(int label, TextureView const & texture_view,
     std::vector<std::size_t> const & faces, mve::TriangleMesh::ConstPtr mesh,
     Settings const & settings) {
 
+    // The output candidates
+    std::vector<TexturePatchCandidate> candidates;
+
     mve::ByteImage::Ptr view_image = texture_view.get_image();
     mve::TriangleMesh::FaceList const & mesh_faces = mesh->get_faces();
     mve::TriangleMesh::VertexList const & vertices = mesh->get_vertices();
@@ -98,7 +101,6 @@ generate_candidates(int label, TextureView const & texture_view,
     int min_x = view_image->width(), min_y = view_image->height();
     int max_x = 0, max_y = 0;
     int max_face_size = 0;
-
     std::vector<FaceBox> faceBoxes;
     
     for (std::size_t i = 0; i < faces.size(); ++i) {
@@ -113,8 +115,16 @@ generate_candidates(int label, TextureView const & texture_view,
             fb.max_x = std::max(static_cast<int>(std::ceil(pixel[0])), fb.max_x);
             fb.max_y = std::max(static_cast<int>(std::ceil(pixel[1])), fb.max_y);
 
-            max_face_size = std::max(max_face_size, fb.max_x - fb.min_x + 1);
-            max_face_size = std::max(max_face_size, fb.max_y - fb.min_y + 1);
+            // Add border
+            fb.min_x -= texture_patch_border;
+            fb.min_y -= texture_patch_border;
+            fb.max_x += texture_patch_border;
+            fb.max_y += texture_patch_border;
+
+            // Calc width and height
+            int local_width = fb.max_x - fb.min_x + 1;
+            int local_height = fb.max_y - fb.min_y + 1;
+            max_face_size = std::max(max_face_size, std::max(local_width, local_height));
         }
         faceBoxes.push_back(fb);
         
@@ -124,79 +134,134 @@ generate_candidates(int label, TextureView const & texture_view,
         max_y = std::max(max_y, faceBoxes[i].max_y);
     }
 
+    // Calc overall width and height
     int width = max_x - min_x + 1;
     int height = max_y - min_y + 1;
     int total_size = std::max(width, height);
 
-//     if (total_size + 2 * texture_patch_border + 2 * settings.texture_patch_padding >= settings.max_texture_size) {
-//       // We will have to partition the image into non-overlapping cells, each cell with extra
-//       // padding, so each face can fit fully in some padded cell
-//       int cell_padding = texture_patch_border + settings.texture_patch_padding
-//         + max_face_size/2 + 1;
-//       int cell_size = settings.max_texture_size - 2 * cell_padding;
-
-//       std::cout << std::endl;
-//       std::cout << "---curr width and height " << width << ' ' << height << std::endl;
-//       std::cout << "---total size " << total_size << std::endl;
-//       std::cout << "--max face size " << max_face_size << std::endl;
-//       std::cout << "--max texture size " << settings.max_texture_size << std::endl;
-//       std::cout << "--cell size " << cell_size << std::endl;
-//       std::cout << "--cell padding " << cell_padding << std::endl;
-      
-//       // Iterate over faces. Put each face in a cell.
-//       // TODO(oalexan1): 
-//     }
-
-    std::vector<TexturePatchCandidate> candidates;
-    std::vector<math::Vec2f> texcoords;
-
-    // Recompute bounds
-    min_x = view_image->width(), min_y = view_image->height();
-    max_x = 0, max_y = 0;
-    for (std::size_t i = 0; i < faces.size(); ++i) {
-
-        for (std::size_t j = 0; j < 3; ++j) {
-            math::Vec3f vertex = vertices[mesh_faces[faces[i] * 3 + j]];
-            math::Vec2f pixel = texture_view.get_pixel_coords(vertex);
-
-            texcoords.push_back(pixel);
-        }
-
-        min_x = std::min(min_x, faceBoxes[i].min_x);
-        min_y = std::min(min_y, faceBoxes[i].min_y);
-        max_x = std::max(max_x, faceBoxes[i].max_x);
-        max_y = std::max(max_y, faceBoxes[i].max_y);
-    }
+    std::map<std::pair<int, int>, std::vector<std::size_t>> partition;
     
-    width = max_x - min_x + 1;
-    height = max_y - min_y + 1;
+    if (total_size + 2 * settings.texture_patch_padding < settings.max_texture_size) {
+      
+      // All faces fit comfortably within texture of given size
+      for (std::size_t i = 0; i < faces.size(); ++i) 
+        partition[std::make_pair(0, 0)].push_back(i);
+      
+    } else{
+      // We will have to partition the image into non-overlapping
+      // cells, each cell with extra padding. The padding is big
+      // enough, that if a face crosses two cells, it will fit fully
+      // within of the two padded cells, even after the face is padded
+      // with settings.texture_patch_padding.
+      int cell_pad = settings.texture_patch_padding + max_face_size/2 + 2;
+      int cell_size = settings.max_texture_size - 2 * cell_pad;
+      if (cell_size <= cell_pad/2) {
+        std::cout << "Found unusually large triangles. Consider increasing -max_texture_size."
+                  << std::endl;
+        exit(1);
+      }
+      
+      int num_cell_cols = ceil(view_image->width()/double(cell_size));
+      int num_cell_rows = ceil(view_image->height()/double(cell_size));
+      
+      for (std::size_t i = 0; i < faces.size(); ++i) {
 
-    /* Add border and adjust min accordingly. */
-    width += 2 * texture_patch_border;
-    height += 2 * texture_patch_border;
-    min_x -= texture_patch_border;
-    min_y -= texture_patch_border;
+        std::cout << std::endl;
+        std::cout << std::endl;
+        int best_col = -1, best_row = -1, best_val = -1;
+        FaceBox fb = faceBoxes[i];
+        for (int col = 0; col < num_cell_cols; col++) {
+          for (int row = 0; row < num_cell_rows; row++) {
+            
+            // Compute the padded cell. We do not crop this to image
+            // bounding box, as even the faceBox can exceed the image
+            // box, as defined above. We only care for the face boxes
+            // to fit in this padded cell whose size is no more than
+            // settings.max_texture_size.
+            int cell_min_x = col       * cell_size - cell_pad;
+            int cell_max_x = (col + 1) * cell_size + cell_pad;
+            int cell_min_y = row       * cell_size - cell_pad;
+            int cell_max_y = (row + 1) * cell_size + cell_pad;
+            
+            // The value val is non-negative only if the face wits within the padded cell
+            int val1 = std::min(fb.min_x - cell_min_x, fb.min_y - cell_min_y);
+            int val2 = std::min(cell_max_x - fb.max_x, cell_max_y - fb.max_y);
+            int val = std::min(val1, val2);
+            
+            // Pick the cell in which it fits most comfortably
+            if (val <= best_val)
+              continue;
 
-    /* Calculate the relative texcoords. */
-    math::Vec2f min(min_x, min_y);
-    for (std::size_t i = 0; i < texcoords.size(); ++i) {
-        texcoords[i] = texcoords[i] - min;
-    }
+            best_val = val;
+            best_col = col;
+            best_row = row;
+          }
+        }
+        
+        if (best_val < 0) {
+          // Sanity check
+          std::cout << "Failed to partition the image. This is a programmer error "
+                    << "which should not have happened.\n";
+          exit(1);
+        }
+        
+        partition[std::make_pair(best_col, best_row)].push_back(i);
+        
+      } // end iterating over faces
+    } // end of partitioning logic
 
-    mve::ByteImage::Ptr byte_image;
-    byte_image = mve::image::crop(view_image, width, height, min_x, min_y,
-                                  *math::Vec3uc(255, 0, 255));
-    mve::FloatImage::Ptr image = mve::image::byte_to_float_image(byte_image);
+    // For each set of indices in the partition, whose face boxes fit
+    // within a given image portion of size at most max_texture_size,
+    // create a texture for these face boxes.
+    for (auto it = partition.begin(); it != partition.end(); it++) {
+      // An alias to the set of face indices for the current partition
+      std::vector<std::size_t> const& face_indices = it->second;
 
-    if (settings.tone_mapping == TONE_MAPPING_GAMMA) {
+      std::vector<std::size_t> local_faces;
+      for (size_t face_iter = 0; face_iter < face_indices.size(); face_iter++) 
+        local_faces.push_back(faces[face_indices[face_iter]]);
+                              
+      int local_min_x = view_image->width(), local_min_y = view_image->height();
+      int local_max_x = 0, local_max_y = 0;
+
+      for (std::size_t face_iter = 0; face_iter < face_indices.size(); ++face_iter) {
+        int i = face_indices[face_iter];
+        local_min_x = std::min(local_min_x, faceBoxes[i].min_x);
+        local_min_y = std::min(local_min_y, faceBoxes[i].min_y);
+        local_max_x = std::max(local_max_x, faceBoxes[i].max_x);
+        local_max_y = std::max(local_max_y, faceBoxes[i].max_y);
+      }
+      
+      // Calc overall width and height for this partition
+      int local_width = local_max_x - local_min_x + 1;
+      int local_height = local_max_y - local_min_y + 1;
+      
+      // Calculate the texcoords, and shift them to be relative to the texture patch
+      math::Vec2f local_min(local_min_x, local_min_y);
+      std::vector<math::Vec2f> texcoords;
+      for (std::size_t i = 0; i < local_faces.size(); ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
+          math::Vec3f vertex = vertices[mesh_faces[local_faces[i] * 3 + j]];
+          math::Vec2f pixel = texture_view.get_pixel_coords(vertex);
+          texcoords.push_back(pixel - local_min);
+        }
+      }
+
+      mve::ByteImage::Ptr byte_image;
+      byte_image = mve::image::crop(view_image, local_width, local_height, local_min_x, local_min_y,
+                                    *math::Vec3uc(255, 0, 255));
+      mve::FloatImage::Ptr image = mve::image::byte_to_float_image(byte_image);
+      
+      if (settings.tone_mapping == TONE_MAPPING_GAMMA)
         mve::image::gamma_correct(image, 2.2f);
+      
+      TexturePatchCandidate texture_patch_candidate =
+        {Rect<int>(local_min_x, local_min_y, local_max_x, local_max_y),
+         TexturePatch::create(label, local_faces, texcoords, image)};
+
+      candidates.push_back(texture_patch_candidate);
     }
 
-    TexturePatchCandidate texture_patch_candidate =
-        {Rect<int>(min_x, min_y, max_x, max_y),
-         TexturePatch::create(label, faces, texcoords, image)};
-
-    candidates.push_back(texture_patch_candidate);
     return candidates;
 }
 
