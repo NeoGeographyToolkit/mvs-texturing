@@ -71,45 +71,105 @@ struct TexturePatchCandidate {
     TexturePatch::Ptr texture_patch;
 };
 
+// A structure to store the bounding box of a mesh face in units of pixel of a given image
+struct FaceBox {
+  int min_x, min_y, max_x, max_y;
+  FaceBox() {
+    min_x = std::numeric_limits<int>::max();
+    min_y = min_x;
+    max_x = -min_x;
+    max_y = -min_y;
+  }
+};
+  
 /** Create a TexturePatchCandidate by calculating the faces' bounding box
  * projected into the view,
  *  relative texture coordinates and extacting the texture views relevant part
  */
-TexturePatchCandidate
-generate_candidate(int label, TextureView const & texture_view,
+std::vector<TexturePatchCandidate>
+generate_candidates(int label, TextureView const & texture_view,
     std::vector<std::size_t> const & faces, mve::TriangleMesh::ConstPtr mesh,
     Settings const & settings) {
 
     mve::ByteImage::Ptr view_image = texture_view.get_image();
-    int min_x = view_image->width(), min_y = view_image->height();
-    int max_x = 0, max_y = 0;
-
     mve::TriangleMesh::FaceList const & mesh_faces = mesh->get_faces();
     mve::TriangleMesh::VertexList const & vertices = mesh->get_vertices();
 
-    std::vector<math::Vec2f> texcoords;
+    int min_x = view_image->width(), min_y = view_image->height();
+    int max_x = 0, max_y = 0;
+    int max_face_size = 0;
+
+    std::vector<FaceBox> faceBoxes;
+    
     for (std::size_t i = 0; i < faces.size(); ++i) {
+
+        FaceBox fb;
+        for (std::size_t j = 0; j < 3; ++j) {
+            math::Vec3f vertex = vertices[mesh_faces[faces[i] * 3 + j]];
+            math::Vec2f pixel = texture_view.get_pixel_coords(vertex);
+
+            fb.min_x = std::min(static_cast<int>(std::floor(pixel[0])), fb.min_x);
+            fb.min_y = std::min(static_cast<int>(std::floor(pixel[1])), fb.min_y);
+            fb.max_x = std::max(static_cast<int>(std::ceil(pixel[0])), fb.max_x);
+            fb.max_y = std::max(static_cast<int>(std::ceil(pixel[1])), fb.max_y);
+
+            max_face_size = std::max(max_face_size, fb.max_x - fb.min_x + 1);
+            max_face_size = std::max(max_face_size, fb.max_y - fb.min_y + 1);
+        }
+        faceBoxes.push_back(fb);
+        
+        min_x = std::min(min_x, faceBoxes[i].min_x);
+        min_y = std::min(min_y, faceBoxes[i].min_y);
+        max_x = std::max(max_x, faceBoxes[i].max_x);
+        max_y = std::max(max_y, faceBoxes[i].max_y);
+    }
+
+    int width = max_x - min_x + 1;
+    int height = max_y - min_y + 1;
+    int total_size = std::max(width, height);
+
+//     if (total_size + 2 * texture_patch_border + 2 * settings.texture_patch_padding >= settings.max_texture_size) {
+//       // We will have to partition the image into non-overlapping cells, each cell with extra
+//       // padding, so each face can fit fully in some padded cell
+//       int cell_padding = texture_patch_border + settings.texture_patch_padding
+//         + max_face_size/2 + 1;
+//       int cell_size = settings.max_texture_size - 2 * cell_padding;
+
+//       std::cout << std::endl;
+//       std::cout << "---curr width and height " << width << ' ' << height << std::endl;
+//       std::cout << "---total size " << total_size << std::endl;
+//       std::cout << "--max face size " << max_face_size << std::endl;
+//       std::cout << "--max texture size " << settings.max_texture_size << std::endl;
+//       std::cout << "--cell size " << cell_size << std::endl;
+//       std::cout << "--cell padding " << cell_padding << std::endl;
+      
+//       // Iterate over faces. Put each face in a cell.
+//       // TODO(oalexan1): 
+//     }
+
+    std::vector<TexturePatchCandidate> candidates;
+    std::vector<math::Vec2f> texcoords;
+
+    // Recompute bounds
+    min_x = view_image->width(), min_y = view_image->height();
+    max_x = 0, max_y = 0;
+    for (std::size_t i = 0; i < faces.size(); ++i) {
+
         for (std::size_t j = 0; j < 3; ++j) {
             math::Vec3f vertex = vertices[mesh_faces[faces[i] * 3 + j]];
             math::Vec2f pixel = texture_view.get_pixel_coords(vertex);
 
             texcoords.push_back(pixel);
-
-            min_x = std::min(static_cast<int>(std::floor(pixel[0])), min_x);
-            min_y = std::min(static_cast<int>(std::floor(pixel[1])), min_y);
-            max_x = std::max(static_cast<int>(std::ceil(pixel[0])), max_x);
-            max_y = std::max(static_cast<int>(std::ceil(pixel[1])), max_y);
         }
+
+        min_x = std::min(min_x, faceBoxes[i].min_x);
+        min_y = std::min(min_y, faceBoxes[i].min_y);
+        max_x = std::max(max_x, faceBoxes[i].max_x);
+        max_y = std::max(max_y, faceBoxes[i].max_y);
     }
-
-    /* Check for valid projections/erroneous labeling files. */
-    assert(min_x >= 0);
-    assert(min_y >= 0);
-    assert(max_x < view_image->width());
-    assert(max_y < view_image->height());
-
-    int width = max_x - min_x + 1;
-    int height = max_y - min_y + 1;
+    
+    width = max_x - min_x + 1;
+    height = max_y - min_y + 1;
 
     /* Add border and adjust min accordingly. */
     width += 2 * texture_patch_border;
@@ -124,7 +184,8 @@ generate_candidate(int label, TextureView const & texture_view,
     }
 
     mve::ByteImage::Ptr byte_image;
-    byte_image = mve::image::crop(view_image, width, height, min_x, min_y, *math::Vec3uc(255, 0, 255));
+    byte_image = mve::image::crop(view_image, width, height, min_x, min_y,
+                                  *math::Vec3uc(255, 0, 255));
     mve::FloatImage::Ptr image = mve::image::byte_to_float_image(byte_image);
 
     if (settings.tone_mapping == TONE_MAPPING_GAMMA) {
@@ -133,8 +194,10 @@ generate_candidate(int label, TextureView const & texture_view,
 
     TexturePatchCandidate texture_patch_candidate =
         {Rect<int>(min_x, min_y, max_x, max_y),
-            TexturePatch::create(label, faces, texcoords, image)};
-    return texture_patch_candidate;
+         TexturePatch::create(label, faces, texcoords, image)};
+
+    candidates.push_back(texture_patch_candidate);
+    return candidates;
 }
 
 bool fill_hole(std::vector<std::size_t> const & hole, UniGraph const & graph,
@@ -477,7 +540,13 @@ generate_texture_patches(UniGraph const & graph, mve::TriangleMesh::ConstPtr mes
         texture_view->load_image();
         std::list<TexturePatchCandidate> candidates;
         for (std::size_t j = 0; j < subgraphs.size(); ++j) {
-            candidates.push_back(generate_candidate(label, *texture_view, subgraphs[j], mesh, settings));
+          
+          std::vector<TexturePatchCandidate> local_candidates =
+            generate_candidates(label, *texture_view, subgraphs[j], mesh, settings);
+
+          for (size_t c = 0; c < local_candidates.size(); c++)
+            candidates.push_back(local_candidates[c]);
+          
         }
         texture_view->release_image();
 
