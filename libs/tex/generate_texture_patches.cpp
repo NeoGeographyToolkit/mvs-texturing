@@ -166,8 +166,6 @@ generate_candidates(int label, TextureView const & texture_view,
       
       for (std::size_t i = 0; i < faces.size(); ++i) {
 
-        std::cout << std::endl;
-        std::cout << std::endl;
         int best_col = -1, best_row = -1, best_val = -1;
         FaceBox fb = faceBoxes[i];
         for (int col = 0; col < num_cell_cols; col++) {
