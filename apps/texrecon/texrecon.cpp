@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
             std::cout << "\tLoading data cost file... " << std::flush;
             try {
                 tex::DataCosts::load_from_file(conf.data_cost_file, &data_costs);
-            } catch (util::FileException e) {
+            } catch (util::FileException const& e) {
                 std::cout << "failed!" << std::endl;
                 std::cerr << e.what() << std::endl;
                 std::exit(EXIT_FAILURE);
