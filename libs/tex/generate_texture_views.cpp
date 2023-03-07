@@ -64,50 +64,65 @@ from_mve_scene(std::string const & scene_dir, std::string const & image_name,
     }
 }
 
-void
-from_images_and_camera_files(std::string const & path,
-    std::vector<TextureView> * texture_views, std::string const & tmp_dir)
-{
-    util::fs::Directory dir(path);
-    std::sort(dir.begin(), dir.end());
-    std::vector<std::string> files;
-    for (std::size_t i = 0; i < dir.size(); ++i) {
-        util::fs::File const & cam_file = dir[i];
-        if (cam_file.is_dir) continue;
+// Read a vector of strings from a file, with spaces and newlines
+// acting as separators.  Store them in a set. The order must be
+// .cam, .jpg, .cam, .jpg. This is not checked.
+void read_image_cam_list(std::string const& file, std::vector<std::string> & list) {
+  list.clear();
+  std::ifstream fh(file);
+  std::string val;
+  while (fh >> val)
+    list.push_back(val);
+  fh.close();
+}
 
-        std::string cam_file_ext = util::string::uppercase(util::string::right(cam_file.name, 4));
-        if (cam_file_ext != ".CAM") continue;
-
-        std::string prefix = util::string::left(cam_file.name, cam_file.name.size() - 4);
-        if (prefix.empty()) continue;
-
-        /* Find corresponding image file. */
-        int step = 1;
-        for (std::size_t j = i + 1; ; j += step) {
-
-            /* Since the files are sorted we can break - no more files with the same prefix exist. */
-            if (j >= dir.size() || util::string::left(dir[j].name, prefix.size()) != prefix) {
-                if (step == 1) {
-                    j = i;
-                    step = -1;
-                    continue;
-                } else {
-                    break;
-                }
-            }
-            util::fs::File const & img_file = dir[j];
-
-            /* Image file (based on extension)? */
-            std::string img_file_ext = util::string::uppercase(util::string::right(img_file.name, 4));
-            if (img_file_ext != ".PNG" && img_file_ext != ".JPG" &&
-                img_file_ext != "TIFF" && img_file_ext != "JPEG") continue;
-
-            files.push_back(cam_file.get_absolute_name());
-            files.push_back(img_file.get_absolute_name());
-            break;
+void images_cams_from_dir(std::string const& dir_path, std::vector<std::string> & files) {
+  files.clear();
+  util::fs::Directory dir(dir_path);
+  std::sort(dir.begin(), dir.end());
+  for (std::size_t i = 0; i < dir.size(); ++i) {
+    util::fs::File const & cam_file = dir[i];
+    if (cam_file.is_dir) continue;
+    
+    std::string cam_file_ext = util::string::uppercase(util::string::right(cam_file.name, 4));
+    if (cam_file_ext != ".CAM") continue;
+    
+    std::string prefix = util::string::left(cam_file.name, cam_file.name.size() - 4);
+    if (prefix.empty()) continue;
+    
+    /* Find corresponding image file. */
+    int step = 1;
+    for (std::size_t j = i + 1; ; j += step) {
+      
+      /* Since the files are sorted we can break - no more files with the same prefix exist. */
+      if (j >= dir.size() || util::string::left(dir[j].name, prefix.size()) != prefix) {
+        if (step == 1) {
+          j = i;
+          step = -1;
+          continue;
+        } else {
+          break;
         }
+      }
+      util::fs::File const & img_file = dir[j];
+      
+      /* Image file (based on extension)? */
+      std::string img_file_ext = util::string::uppercase(util::string::right(img_file.name, 4));
+      if (img_file_ext != ".PNG" && img_file_ext != ".JPG" &&
+          img_file_ext != "TIFF" && img_file_ext != "JPEG") continue;
+      
+      files.push_back(cam_file.get_absolute_name());
+      files.push_back(img_file.get_absolute_name());
+      break;
     }
+  }
+}
 
+void
+from_images_and_camera_files(std::vector<std::string> const& files,
+                             std::vector<TextureView> * texture_views,
+                             std::string const & tmp_dir) {
+  
     ProgressCounter view_counter("\tLoading", files.size() / 2);
     #pragma omp parallel for
     for (std::size_t i = 0; i < files.size(); i += 2) {
@@ -221,18 +236,24 @@ generate_texture_views(std::string const & in_scene,
 {
     /* Determine input format. */
 
-    /* BUNDLEFILE */
+    /* .nvm file or .txt file with list of cameras and images in this order. */
     if (util::fs::file_exists(in_scene.c_str())) {
         std::string const & file = in_scene;
         std::string extension = util::string::uppercase(util::string::right(file, 3));
         if (extension == "NVM") {
-            from_nvm_scene(file, texture_views, tmp_dir);
+          from_nvm_scene(file, texture_views, tmp_dir);
+        } else if (extension == "TXT") {
+          std::vector<std::string> files;
+          read_image_cam_list(in_scene, files);
+          from_images_and_camera_files(files, texture_views, tmp_dir);
         }
     }
 
     /* SCENE_FOLDER */
     if (util::fs::dir_exists(in_scene.c_str())) {
-        from_images_and_camera_files(in_scene, texture_views, tmp_dir);
+      std::vector<std::string> files;
+      images_cams_from_dir(in_scene, files);
+      from_images_and_camera_files(files, texture_views, tmp_dir);
     }
 
     /* MVE_SCENE::EMBEDDING */
