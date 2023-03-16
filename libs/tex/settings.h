@@ -61,7 +61,7 @@ enum DataTerm {
     DATA_TERM_GMI = 1,
     // The dot product of the camera view direction and the ray
     // from the camera center to the face center
-    DATA_TERM_VIEW_DIR_DOT_FACE_DIR = 2
+    DATA_TERM_CENTER = 2
 };
 
 /** Enum representing a smoothness term. */
@@ -103,7 +103,7 @@ TEX_NAMESPACE_END
 
 template <> inline
 const std::vector<std::string> choice_strings<tex::DataTerm>() {
-  return {"area", "gmi", "view_dir_dot_face_dir"};
+  return {"area", "gmi", "center"};
 }
 
 template <> inline

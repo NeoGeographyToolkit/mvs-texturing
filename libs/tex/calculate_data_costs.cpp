@@ -219,7 +219,7 @@ calculate_face_projection_infos(mve::TriangleMesh::ConstPtr mesh,
                 /* Calculate quality. */
                 texture_view->get_face_info(v1, v2, v3, &info, settings);
 
-                if (settings.data_term == DATA_TERM_VIEW_DIR_DOT_FACE_DIR) {
+                if (settings.data_term == DATA_TERM_CENTER) {
                   // Note how override the quality metric for this
                   // case. Cannot compute it in get_face_info as there
                   // we don't know the inputs we need.
@@ -304,8 +304,8 @@ postprocess_face_infos(Settings const & settings,
             data_costs->set_value(i, info.view_id, data_cost);
         }
 
-        // This is no longer needed except for the DATA_TERM_VIEW_DIR_DOT_FACE_DIR case.
-        if (settings.data_term != DATA_TERM_VIEW_DIR_DOT_FACE_DIR) {
+        // This is no longer needed except for the DATA_TERM_CENTER case.
+        if (settings.data_term != DATA_TERM_CENTER) {
           face_projection_infos->at(i) = std::vector<FaceProjectionInfo>();
         }
     }

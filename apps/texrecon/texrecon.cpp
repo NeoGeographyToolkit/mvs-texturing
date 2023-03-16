@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 
     tex::FaceProjectionInfos face_projection_infos(num_faces);
 
-    if (conf.settings.data_term == tex::DATA_TERM_VIEW_DIR_DOT_FACE_DIR) {
+    if (conf.settings.data_term == tex::DATA_TERM_CENTER) {
 
       // We declare the best view to be the one which is most "upfront"
       // with the face center. No optimization happens.

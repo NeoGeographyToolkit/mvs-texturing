@@ -24,7 +24,7 @@ TextureView::TextureView(std::size_t id, mve::CameraInfo const & camera,
     mve::image::ImageHeaders header;
     try {
          header = mve::image::load_file_headers(image_file);
-    } catch (util::Exception e) {
+    } catch (util::Exception const& e) {
         std::cerr << "Could not load image header of " << image_file << std::endl;
         std::cerr << e.what() << std::endl;
         std::exit(EXIT_FAILURE);
@@ -251,7 +251,7 @@ TextureView::get_face_info(math::Vec3f const & v1, math::Vec3f const & v2,
     case DATA_TERM_GMI:
       face_info->quality = gmi;
       break;
-    case DATA_TERM_VIEW_DIR_DOT_FACE_DIR:
+    case DATA_TERM_CENTER:
       face_info->quality = 0;
       // Will be computed later
       break;
