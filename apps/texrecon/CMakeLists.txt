@@ -6,7 +6,7 @@ set(BIN texrecon_bin)
 add_executable(${BIN} ${SOURCES})
 #set_property(TARGET ${BIN} PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
 #add_dependencies(${BIN} ext_mve)
-target_link_libraries(${BIN} texture_reconstruction TBB::tbb TBB::tbbmalloc mve mve_util
+target_link_libraries(${BIN} texture_reconstruction TBB::tbb TBB::tbbmalloc mveCore mveUtil
     ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES}
 )
 install(TARGETS ${BIN} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
