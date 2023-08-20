@@ -26,7 +26,7 @@ static const std::string clear = "\r" + std::string(80,' ') + "\r";
 
 class ProgressCounter {
     private:
-        std::ofstream tty;
+        // std::ofstream tty;
         util::WallTimer timer;
         std::string task;
         std::size_t max;
@@ -41,7 +41,9 @@ class ProgressCounter {
 
 inline
 ProgressCounter::ProgressCounter(std::string const & _task, std::size_t _max)
-    : tty("/dev/tty", std::ios_base::out), timer(),
+    : 
+    // tty("/dev/tty", std::ios_base::out), 
+    timer(),
     task(_task), max(_max), count(0) {}
 
 inline void
@@ -81,7 +83,7 @@ ProgressCounter::progress(void) {
         }
 
         #pragma omp critical(progress_counter_progress)
-        tty << ss.rdbuf() << std::flush;
+        std::cout << ss.rdbuf() << std::flush;
     }
 }
 

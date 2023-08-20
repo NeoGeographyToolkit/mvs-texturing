@@ -124,7 +124,7 @@ generate_texture_atlases(std::vector<TexturePatch::Ptr> * orig_texture_patches,
 
     std::size_t const total_num_patches = texture_patches.size();
     std::size_t remaining_patches = texture_patches.size();
-    std::ofstream tty("/dev/tty", std::ios_base::out);
+    // std::ofstream tty("/dev/tty", std::ios_base::out);
 
     #pragma omp parallel
     {
@@ -143,13 +143,13 @@ generate_texture_atlases(std::vector<TexturePatch::Ptr> * orig_texture_patches,
         std::list<TexturePatch::ConstPtr>::iterator it = texture_patches.begin();
         for (; it != texture_patches.end();) {
             std::size_t done_patches = total_num_patches - remaining_patches;
-            int precent = static_cast<float>(done_patches)
+            int percent = static_cast<float>(done_patches)
                 / total_num_patches * 100.0f;
             if (total_num_patches > 100
                 && done_patches % (total_num_patches / 100) == 0) {
 
-                tty << "\r\tWorking on atlas " << texture_atlases->size() << " "
-                 << precent << "%... " << std::flush;
+                std::cout << "\r\tWorking on atlas " << texture_atlases->size() << " "
+                 << percent << "%... " << std::flush;
             }
 
             if (texture_atlas->insert(*it)) {
