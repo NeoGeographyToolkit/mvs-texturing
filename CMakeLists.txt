@@ -76,3 +76,5 @@ include_directories(
 
 add_subdirectory(libs)
 add_subdirectory(apps)
+
+install(DIRECTORY "libs/tex" DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
