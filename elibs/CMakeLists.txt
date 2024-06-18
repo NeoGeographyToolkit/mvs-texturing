@@ -7,7 +7,7 @@
 # This is fetched and built as a submodule
 # externalproject_add(ext_mapmap
 #     PREFIX          ext_mapmap
-#     GIT_REPOSITORY  git@github.com:oleg-alexandrov/mapmap_cpu.git
+#     GIT_REPOSITORY  git@github.com:NeoGeographyToolkit/mapmap_cpu.git
 #     GIT_TAG         396f0fa1ce29f83de30e47c5b4fc7b2ca1e06e5d
 #     UPDATE_COMMAND  ""
 #     SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/mapmap
@@ -18,7 +18,7 @@
 
 # externalproject_add(ext_rayint
 #     PREFIX          ext_rayint
-#     GIT_REPOSITORY  git@github.com:oleg-alexandrov/rayint.git
+#     GIT_REPOSITORY  git@github.com:NeoGeographyToolkit/rayint.git
 #     GIT_TAG         cuda
 #     UPDATE_COMMAND  ""
 #     SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/rayint
@@ -40,7 +40,7 @@
 
 # externalproject_add(ext_mve
 #     PREFIX          mve
-#     GIT_REPOSITORY  git@github.com:oleg-alexandrov/mve.git
+#     GIT_REPOSITORY  git@github.com:NeoGeographyToolkit/mve.git
 #     GIT_TAG         cfde01c
 #     UPDATE_COMMAND  ""
 #     SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/mve
