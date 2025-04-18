@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.15)
 
 # This will be picked up by cmake from the conda env
 #LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/elibs/tbb")
